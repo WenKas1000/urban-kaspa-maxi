@@ -1,0 +1,48 @@
+// Wen Kas - Kasland Token & NFT Contract
+// Designed for Kaspa BlockDAG
+
+#![no_std]
+
+use kaspa_std::prelude::*;
+use kaspa_blockdag::address::*;
+use kaspa_blockdag::transaction::*;
+
+const TOKEN_NAME: &str = "Wen Kas";
+const TOKEN_SYMBOL: &str = "WENKAS";
+const TOTAL_SUPPLY: u64 = 287_000_000_000;
+
+// Maximum NFT Supply
+const MAX_NFT_SUPPLY: u64 = 5_000;
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Token {
+    name: &'static str,
+    symbol: &'static str,
+    total_supply: u64,
+    balances: BTreeMap<Address, u64>,
+    nft_owners: BTreeMap<u64, Address>, // NFT ID mapped to owner address
+    nft_metadata: BTreeMap<u64, String>, // Metadata for each NFT
+}
+
+impl Token {
+    pub fn new() -> Self {
+        let mut token = Token {
+            name: TOKEN_NAME,
+            symbol: TOKEN_SYMBOL,
+            total_supply: TOTAL_SUPPLY,
+            balances: BTreeMap::new(),
+            nft_owners: BTreeMap::new(),
+            nft_metadata: BTreeMap::new(),
+        };
+
+        // Allocate initial supply to creator's address
+        let creator_address = get_creator_address();
+        token.balances.insert(creator_address, TOTAL_SUPPLY);
+        token
+    }
+
+    pub fn transfer(&mut self, sender: Address, recipient: Address, amount: u64) -> Result<(), &'static str> {
+        if let Some(sender_balance) = self.balances.get_mut(&sender) {
+            if *sender_balance >= amount {
+                *sender_balance -= amount;
+                *self.balances.entry(recipient).or
